@@ -40,7 +40,7 @@
     </div>
   </nav>
 
-  <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+  <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
 
     <!-- ==================== 1. หน้าล็อกอินสำหรับครู ==================== -->
     <section id="loginSection" class="bg-white p-8 rounded-2xl shadow-xl max-w-md mx-auto mt-6 border border-slate-100">
@@ -71,30 +71,32 @@
         </button>
       </form>
 
-      <!-- ปุ่มสลับไปดูสถิตินักเรียน -->
       <div class="mt-6 pt-4 border-t border-slate-100 text-center">
         <button onclick="promptStudentSearch()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
-          <i class="fa-solid fa-graduation-cap mr-1"></i> นักเรียน? คลิกที่นี่เพื่อตรวจสอบสถิติของตนเอง
+          <i class="fa-solid fa-graduation-cap mr-1"></i> นักเรียน? คลิกที่นี่เพื่อตรวจสอบสถิติ & ประเมินเกณฑ์
         </button>
       </div>
     </section>
 
-    <!-- ==================== 2. หน้าแดชบอร์ดครู (กิจกรรม + สถิติภาพรวม) ==================== -->
+    <!-- ==================== 2. หน้าแดชบอร์ดครู ==================== -->
     <section id="dashboardSection" class="hidden space-y-6">
       <!-- ส่วนแท็บเลือกโหมด -->
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 gap-4">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800">ระบบจัดการกิจกรรม</h2>
-          <p class="text-slate-500 text-sm">ตรวจสอบสถิติ, จัดการกิจกรรม และเปิดระบบบันทึกเวลาเข้าร่วม</p>
+          <h2 class="text-2xl font-bold text-slate-800">ระบบจัดการกิจกรรม & เกณฑ์จิตอาสา</h2>
+          <p class="text-slate-500 text-sm">ประเมินผลการเข้าร่วม, คัดกรองเด็กจิตอาสา และบันทึกเวลาสแกน</p>
         </div>
-        <div class="flex items-center gap-2">
-          <button onclick="switchTab('activities')" id="tabBtnActivities" class="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition">
-            <i class="fa-solid fa-list-check mr-1.5"></i> รายการกิจกรรม
+        <div class="flex flex-wrap items-center gap-2">
+          <button onclick="switchTab('activities')" id="tabBtnActivities" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition">
+            <i class="fa-solid fa-list-check mr-1"></i> กิจกรรม
           </button>
-          <button onclick="switchTab('stats')" id="tabBtnStats" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-            <i class="fa-solid fa-chart-pie mr-1.5"></i> แดชบอร์ดสถิติ
+          <button onclick="switchTab('eval')" id="tabBtnEval" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+            <i class="fa-solid fa-scale-balanced mr-1 text-amber-500"></i> ประเมินผล/จิตอาสา
           </button>
-          <button onclick="openCreateModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-md transition ml-1">
+          <button onclick="switchTab('stats')" id="tabBtnStats" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+            <i class="fa-solid fa-chart-pie mr-1"></i> สถิติรวม
+          </button>
+          <button onclick="openCreateModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-3 py-2 rounded-xl text-xs sm:text-sm shadow-md transition">
             <i class="fa-solid fa-plus mr-1"></i> สร้างกิจกรรม
           </button>
         </div>
@@ -105,33 +107,107 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="activityContainer"></div>
       </div>
 
-      <!-- แท็บ 2: แดชบอร์ดสรุปสถิติทุกกิจกรรมสำหรับครู -->
+      <!-- แท็บ 2: ประเมินผลเกณฑ์การเข้าร่วม & คัดกรองเด็กจิตอาสาบำเพ็ญประโยชน์ -->
+      <div id="tabContentEval" class="hidden space-y-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-5">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 class="text-xl font-bold text-slate-800"><i class="fa-solid fa-user-shield mr-2 text-indigo-600"></i>ประเมินเกณฑ์การเข้าร่วมกิจกรรม (จิตอาสา)</h3>
+              <p class="text-xs text-slate-400 mt-1">คำนวณเปอร์เซ็นต์เทียบกับค่าสแกนสูงสุดในห้อง หากต่ำกว่าเกณฑ์จะถูกบันทึกเพื่อลงโทษจิตอาสา</p>
+            </div>
+            <!-- ปุ่มคัดลอกรายชื่อเด็กจิตอาสา -->
+            <button onclick="copyFailedStudentsList()" class="bg-rose-500 hover:bg-rose-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm shadow-md transition active:scale-95 flex items-center">
+              <i class="fa-solid fa-clipboard-list mr-2"></i> คัดลอกรายชื่อเด็กจิตอาสา
+            </button>
+          </div>
+
+          <!-- แถบกรองข้อมูล -->
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2 border-t border-slate-100">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">เลือกกิจกรรม</label>
+              <select id="evalActSelect" onchange="runActivityEvaluation()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">ระดับชั้น/ห้อง</label>
+              <select id="evalClassSelect" onchange="filterEvalTable()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none">
+                <option value="ALL">-- แสดงทุกห้อง --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">เกณฑ์ผ่านขั้นต่ำ (%)</label>
+              <select id="evalThresholdSelect" onchange="runActivityEvaluation()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none">
+                <option value="80" selected>80% (เกณฑ์มาตรฐาน)</option>
+                <option value="75">75%</option>
+                <option value="70">70%</option>
+                <option value="60">60%</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">ตัวกรองผลประเมิน</label>
+              <select id="evalStatusFilter" onchange="filterEvalTable()" class="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none">
+                <option value="ALL">ทั้งหมด</option>
+                <option value="FAIL" class="text-rose-600 font-bold">⚠️ เฉพาะไม่ผ่านเกณฑ์ (จิตอาสา)</option>
+                <option value="PASS" class="text-emerald-600 font-bold">✅ ผ่านเกณฑ์</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- ตัวเลข KPI การประเมิน -->
+          <div class="grid grid-cols-3 gap-3 pt-3">
+            <div class="bg-slate-50 p-3.5 rounded-xl text-center border border-slate-100">
+              <span class="text-xs text-slate-400 font-medium">นักเรียนทั้งหมด</span>
+              <p class="text-2xl font-extrabold text-slate-800" id="evalTotalCount">0</p>
+            </div>
+            <div class="bg-emerald-50 p-3.5 rounded-xl text-center border border-emerald-100">
+              <span class="text-xs text-emerald-600 font-bold">ผ่านเกณฑ์</span>
+              <p class="text-2xl font-extrabold text-emerald-700" id="evalPassCount">0</p>
+            </div>
+            <div class="bg-rose-50 p-3.5 rounded-xl text-center border border-rose-100">
+              <span class="text-xs text-rose-600 font-bold">ไม่ผ่าน (จิตอาสา)</span>
+              <p class="text-2xl font-extrabold text-rose-700" id="evalFailCount">0</p>
+            </div>
+          </div>
+
+          <!-- ตารางรายชื่อนักเรียน & ผลประเมิน -->
+          <div class="overflow-x-auto pt-2">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                  <th class="py-3 px-3">รหัสนักเรียน</th>
+                  <th class="py-3 px-3">ชื่อ-นามสกุล</th>
+                  <th class="py-3 px-3">ชั้น / ห้อง</th>
+                  <th class="py-3 px-3 text-center">สแกน (ครั้ง)</th>
+                  <th class="py-3 px-3 text-center">สูงสุดในห้อง</th>
+                  <th class="py-3 px-3 text-center">เปอร์เซ็นต์</th>
+                  <th class="py-3 px-3 text-center">ผลการประเมิน</th>
+                  <th class="py-3 px-3 text-center">ชดเชย (ครั้ง)</th>
+                </tr>
+              </thead>
+              <tbody id="evalTableBody" class="divide-y divide-slate-100">
+                <tr><td colspan="8" class="py-8 text-center text-slate-400">กรุณาเลือกกิจกรรมเพื่อประมวลผล</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- แท็บ 3: แดชบอร์ดสรุปสถิติทั่วไป -->
       <div id="tabContentStats" class="hidden space-y-6">
-        <!-- 3 การ์ด KPI หลัก -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
-            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
-              <i class="fa-solid fa-layer-group"></i>
-            </div>
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"><i class="fa-solid fa-layer-group"></i></div>
             <p class="text-xs font-semibold text-slate-400">กิจกรรมทั้งหมด</p>
             <p class="text-3xl font-extrabold text-slate-800 mt-1" id="statTotalActivities">0</p>
-            <p class="text-[11px] text-slate-400 mt-1">รายการ</p>
           </div>
           <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
-            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
-              <i class="fa-solid fa-calendar-check"></i>
-            </div>
-            <p class="text-xs font-semibold text-slate-400">ยอดเช็คชื่อวันนี้ (ทุกกิจกรรม)</p>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"><i class="fa-solid fa-calendar-check"></i></div>
+            <p class="text-xs font-semibold text-slate-400">สแกนวันนี้ (รวม)</p>
             <p class="text-3xl font-extrabold text-emerald-600 mt-1" id="statTodayTotal">0</p>
-            <p class="text-[11px] text-slate-400 mt-1">คน/รอบ</p>
           </div>
           <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
-            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
-              <i class="fa-solid fa-users"></i>
-            </div>
-            <p class="text-xs font-semibold text-slate-400">ยอดเช็คชื่อสะสมทั้งหมด</p>
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl"><i class="fa-solid fa-users"></i></div>
+            <p class="text-xs font-semibold text-slate-400">ยอดสแกนสะสม</p>
             <p class="text-3xl font-extrabold text-purple-600 mt-1" id="statAllTimeTotal">0</p>
-            <p class="text-[11px] text-slate-400 mt-1">ครั้ง</p>
           </div>
         </div>
 
@@ -139,39 +215,13 @@
         <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-2xl text-white shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
             <h4 class="text-lg font-bold"><i class="fa-solid fa-share-nodes mr-2"></i>ลิงก์ตรวจสอบสถิติสำหรับนักเรียน</h4>
-            <p class="text-xs text-indigo-100 mt-1">นักเรียนสามารถเข้าดูสถิติกิจกรรมของตนเองได้ผ่านลิงก์เฉพาะรายบุคคล</p>
+            <p class="text-xs text-indigo-100 mt-1">ส่งให้นักเรียนเพื่อตรวจสอบเปอร์เซ็นต์ของตนเองเทียบกับเพื่อน</p>
           </div>
           <div class="flex w-full sm:w-auto gap-2">
             <input type="text" id="shareStudentIdInput" placeholder="กรอกรหัสนักเรียน" class="w-full sm:w-44 px-3 py-2 rounded-xl text-slate-800 text-sm focus:outline-none">
             <button onclick="copyStudentLink()" class="shrink-0 bg-white text-indigo-700 font-bold px-4 py-2 rounded-xl text-sm hover:bg-indigo-50 transition active:scale-95 shadow">
               <i class="fa-solid fa-copy mr-1"></i> คัดลอกลิงก์
             </button>
-          </div>
-        </div>
-
-        <!-- ตารางรายละเอียดสถิติแยกตามกิจกรรม -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-chart-column mr-2 text-indigo-600"></i>สรุปสถิติแยกตามกิจกรรม</h3>
-            <button onclick="loadDashboardStats()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
-              <i class="fa-solid fa-rotate-right mr-1"></i> รีเฟรชสถิติ
-            </button>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse">
-              <thead>
-                <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                  <th class="py-3 px-3">ชื่อกิจกรรม</th>
-                  <th class="py-3 px-3">ประเภท</th>
-                  <th class="py-3 px-3 text-center">สแกนวันนี้</th>
-                  <th class="py-3 px-3 text-center">สะสมทั้งหมด</th>
-                  <th class="py-3 px-3">การสแกนแยกตามรอบ</th>
-                </tr>
-              </thead>
-              <tbody id="statsTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
-                <tr><td colspan="5" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังประมวลผลสถิติ...</td></tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -184,15 +234,13 @@
       </button>
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- การ์ดฝั่งซ้าย: ข้อมูลกิจกรรม & ยอดสะสม -->
         <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between h-fit space-y-6">
           <div>
             <span class="bg-indigo-100 text-indigo-700 font-bold px-3 py-1 rounded-full text-xs" id="activeActType"></span>
             <h3 class="text-2xl font-bold text-slate-800 mt-2" id="activeActName">ชื่อกิจกรรม</h3>
             <div class="mt-4">
               <label class="block text-sm font-semibold mb-1 text-slate-600">รอบการเช็คปัจจุบัน</label>
-              <select id="modeOptionSelect" onchange="onModeChange('main')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700">
-              </select>
+              <select id="modeOptionSelect" onchange="onModeChange('main')" class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-700"></select>
             </div>
           </div>
           <div class="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-2xl text-center shadow-lg">
@@ -202,7 +250,6 @@
           </div>
         </div>
 
-        <!-- การ์ดฝั่งขวา: ช่องสแกนรับข้อมูล -->
         <div class="md:col-span-2 bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
           <div class="max-w-md mx-auto w-full text-center space-y-5">
             <div class="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto shadow-inner">
@@ -213,7 +260,6 @@
               <p class="text-sm text-slate-400 mt-1">แตะบัตร RFID, กรอกรหัสนักเรียน หรือสแกน QR Code เพื่อบันทึกเวลาได้ทันที</p>
             </div>
 
-            <!-- ปุ่มเปิดกล้องสแกน QR -->
             <button type="button" onclick="openQrScanner()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-3.5 rounded-2xl font-bold shadow-lg shadow-indigo-100 active:scale-[0.98] transition flex items-center justify-center gap-2">
               <i class="fa-solid fa-qrcode text-lg"></i> เปิดกล้องสแกน QR Code นักเรียน
             </button>
@@ -236,14 +282,12 @@
                 <span>ยืนยันบันทึกเวลา</span>
               </button>
             </form>
-
-            <p class="text-xs text-slate-400"><i class="fa-solid fa-circle-info mr-1"></i> ระบบเปิดแคชความเร็วสูง สแกนต่อเนื่องได้ทันทีโดยไม่ต้องรอโหลด</p>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ==================== 4. หน้าแสดงสรุปสถิตินักเรียน (Student Portal) ==================== -->
+    <!-- ==================== 4. หน้าแสดงสรุปสถิตินักเรียน (Student Portal + Benchmark) ==================== -->
     <section id="studentPortalSection" class="hidden space-y-6">
       <!-- การ์ดโปรไฟล์นักเรียน -->
       <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center sm:items-start gap-6">
@@ -257,37 +301,28 @@
           <h2 id="stdProfileName" class="text-2xl sm:text-3xl font-extrabold text-slate-800">ชื่อ-นามสกุล</h2>
           <div class="mt-2 flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 text-sm text-slate-500 font-medium">
             <span><i class="fa-solid fa-id-badge mr-1 text-slate-400"></i>รหัส: <strong id="stdProfileId" class="text-slate-700 font-mono"></strong></span>
-            <span><i class="fa-solid fa-school mr-1 text-slate-400"></i>ชั้น/ห้อง: <strong id="stdProfileClass" class="text-slate-700"></strong></span>
+            <span><i class="fa-solid fa-school mr-1 text-slate-400"></i>กลุ่มระดับชั้น/ห้อง: <strong id="stdProfileClass" class="text-indigo-600 font-bold"></strong></span>
           </div>
         </div>
-        <!-- ค้นหารหัสอื่น -->
         <button onclick="promptStudentSearch()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl font-semibold transition shrink-0">
           <i class="fa-solid fa-magnifying-glass mr-1"></i> ค้นหารหัสอื่น
         </button>
       </div>
 
-      <!-- สรุปสถิติตัวเลขนักเรียน -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-5 rounded-2xl shadow-md text-center">
-          <p class="text-xs font-medium opacity-80">กิจกรรมที่เคยเข้าร่วม</p>
-          <p class="text-3xl sm:text-4xl font-extrabold my-1" id="stdStatsActCount">0</p>
-          <p class="text-[11px] opacity-70">กิจกรรม</p>
-        </div>
-        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-5 rounded-2xl shadow-md text-center">
-          <p class="text-xs font-medium opacity-80">จำนวนครั้งที่บันทึกเวลาสำเร็จ</p>
-          <p class="text-3xl sm:text-4xl font-extrabold my-1" id="stdStatsTotalCheckins">0</p>
-          <p class="text-[11px] opacity-70">ครั้ง</p>
-        </div>
-      </div>
-
-      <!-- รายการกิจกรรมแต่ละรายการของนักเรียน -->
+      <!-- รายการกิจกรรม + กราฟเปรียบเทียบค่าสูงสุดในห้อง -->
       <div class="space-y-4">
-        <h3 class="text-xl font-bold text-slate-800 flex items-center">
-          <i class="fa-solid fa-calendar-days mr-2 text-indigo-600"></i> รายการกิจกรรมและประวัติการบันทึกเวลา
-        </h3>
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-slate-800 flex items-center">
+            <i class="fa-solid fa-award mr-2 text-indigo-600"></i> ผลการประเมินกิจกรรมเทียบกับเพื่อนในห้อง
+          </h3>
+          <span class="text-xs bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-lg border border-amber-200">
+            เกณฑ์ผ่าน: 80% ของเพื่อนที่สแกนสูงสุด
+          </span>
+        </div>
+
         <div id="studentActivitiesContainer" class="space-y-4">
           <div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">
-            <i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังโหลดประวัติกิจกรรมของนักเรียน...
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังโหลดประวัติและประเมินเกณฑ์กิจกรรม...
           </div>
         </div>
       </div>
@@ -306,13 +341,10 @@
       </div>
       <button onclick="closeQrScanner()" class="w-10 h-10 shrink-0 rounded-full bg-white/20 text-white flex items-center justify-center text-lg active:scale-90 transition"><i class="fa-solid fa-xmark"></i></button>
     </div>
-
     <div id="reader" class="w-full flex-1 rounded-2xl overflow-hidden bg-black flex items-center justify-center my-2"></div>
-
     <div class="space-y-3 py-2">
       <div class="flex items-center gap-2">
-        <select id="qrModeSelect" onchange="onModeChange('qr')" class="flex-1 min-w-0 p-2.5 bg-white/10 text-white border border-white/20 rounded-xl text-sm font-semibold focus:outline-none">
-        </select>
+        <select id="qrModeSelect" onchange="onModeChange('qr')" class="flex-1 min-w-0 p-2.5 bg-white/10 text-white border border-white/20 rounded-xl text-sm font-semibold focus:outline-none"></select>
         <div class="bg-white/10 border border-white/20 text-white rounded-xl px-4 py-2 text-center">
           <span class="text-[10px] block opacity-70 leading-none">วันนี้</span>
           <span id="qrCounter" class="font-extrabold text-lg leading-tight">0</span>
@@ -325,10 +357,10 @@
     </div>
   </div>
 
-  <!-- Modal แสดงข้อมูลนักเรียนเมื่อผ่าน (สีเขียว เต็มจอ) -->
+  <!-- Modal แสดงข้อมูลเมื่อสแกนผ่าน -->
   <div id="studentModal" class="hidden fixed inset-0 bg-emerald-600 text-white flex flex-col justify-center items-center z-50">
     <div class="text-center max-w-lg px-6 flex flex-col items-center">
-      <div class="w-52 h-52 md:w-60 md:h-60 bg-white p-2 rounded-full shadow-2xl mb-5 overflow-hidden flex items-center justify-center">
+      <div class="w-52 h-52 bg-white p-2 rounded-full shadow-2xl mb-5 overflow-hidden flex items-center justify-center">
         <img id="modalStudentImg" src="" alt="Student Profile" class="w-full h-full object-cover rounded-full">
       </div>
       <div class="bg-white/20 px-6 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider mb-3">
@@ -340,30 +372,26 @@
       <div class="mt-6 border-t border-white/30 pt-3 w-full">
         <p class="text-sm opacity-80">รอบเวลา: <span id="modalCheckMode" class="font-bold underline text-base"></span></p>
       </div>
-      <button onclick="closeStudentModal()" class="mt-6 bg-white text-emerald-700 hover:bg-slate-100 font-bold px-8 py-2.5 rounded-2xl shadow-lg text-lg transition">
-        คนถัดไป
-      </button>
+      <button onclick="closeStudentModal()" class="mt-6 bg-white text-emerald-700 hover:bg-slate-100 font-bold px-8 py-2.5 rounded-2xl shadow-lg text-lg transition">คนถัดไป</button>
     </div>
   </div>
 
-  <!-- Modal แจ้งเตือนข้อผิดพลาด / สแกนซ้ำ -->
+  <!-- Modal แจ้งเตือนข้อผิดพลาด -->
   <div id="errorNotificationModal" class="hidden fixed inset-0 flex flex-col justify-center items-center z-50 text-white">
     <div id="errorModalBg" class="absolute inset-0 z-[-1]"></div>
     <div class="text-center max-w-lg px-6 flex flex-col items-center">
       <div id="errorIconBox" class="w-24 h-24 bg-white/20 rounded-full flex items-center justify-center text-5xl mb-4 shadow-xl">
         <i class="fa-solid fa-triangle-exclamation"></i>
       </div>
-      <h2 id="errorModalTitle" class="text-3xl md:text-4xl font-extrabold tracking-wide drop-shadow-md mb-2">เกิดข้อผิดพลาด</h2>
-      <p id="errorModalMessage" class="text-lg md:text-xl opacity-90 font-medium bg-black/20 px-6 py-2.5 rounded-2xl max-w-md">รายละเอียด</p>
+      <h2 id="errorModalTitle" class="text-3xl font-extrabold tracking-wide drop-shadow-md mb-2">เกิดข้อผิดพลาด</h2>
+      <p id="errorModalMessage" class="text-lg opacity-90 font-medium bg-black/20 px-6 py-2.5 rounded-2xl max-w-md">รายละเอียด</p>
       <div id="errorStudentDetail" class="hidden mt-4 flex flex-col items-center">
         <div class="w-28 h-28 bg-white p-1 rounded-full overflow-hidden mb-2 shadow-lg">
           <img id="errorStudentImg" src="" class="w-full h-full object-cover rounded-full">
         </div>
         <p id="errorStudentName" class="text-lg font-bold"></p>
       </div>
-      <button onclick="closeErrorModal()" class="mt-6 bg-white text-slate-900 hover:bg-slate-100 font-bold px-8 py-2.5 rounded-2xl shadow-lg text-lg transition">
-        ตกลง (คนต่อไป)
-      </button>
+      <button onclick="closeErrorModal()" class="mt-6 bg-white text-slate-900 hover:bg-slate-100 font-bold px-8 py-2.5 rounded-2xl shadow-lg text-lg transition">ตกลง (คนต่อไป)</button>
     </div>
   </div>
 
@@ -415,6 +443,8 @@
     let cachedTodayScanned = {};
     let todayTotalCount = 0;
 
+    let currentEvalData = null; // ข้อมูลประเมินผลจิตอาสา
+
     let html5QrCode = null;
     let isCameraActive = false;
     let cameraStartPromise = null;
@@ -431,7 +461,7 @@
       return synth;
     }
     function playSuccessSound() {
-      try { getSynth().triggerAttackRelease("E6", "0.08"); } catch (e) { console.log("Audio error:", e); }
+      try { getSynth().triggerAttackRelease("E6", "0.08"); } catch (e) {}
     }
     function playFailSound() {
       try {
@@ -439,7 +469,7 @@
         const now = Tone.now();
         s.triggerAttackRelease("C4", "0.1", now);
         s.triggerAttackRelease("C4", "0.1", now + 0.15);
-      } catch (e) { console.log("Audio error:", e); }
+      } catch (e) {}
     }
 
     // ---------- API ----------
@@ -476,7 +506,6 @@
       const stdParam = (params.get('std') || '').trim();
       const idParam = (params.get('id') || '').trim();
 
-      // 1. ตรวจสอบโหมดนักเรียน (ผ่าน /std/?id=... หรือ ?std=...)
       if (isStudentPath && idParam) {
         loadStudentPortal(idParam);
         return;
@@ -485,14 +514,11 @@
         loadStudentPortal(stdParam);
         return;
       }
-
-      // 2. ถ้าเป็นครู Auto-login ผ่าน ?id=... (ไม่ใช่โหมดนักเรียน)
       if (idParam && !isStudentPath) {
         executeAutoLogin(idParam);
         return;
       }
 
-      // 3. ตรวจสอบเซสชันครูที่บันทึกไว้ในเบราว์เซอร์
       const savedTeacher = localStorage.getItem('mutec_teacherName');
       const savedToken = localStorage.getItem('mutec_token');
       if (savedTeacher && savedToken) {
@@ -517,11 +543,8 @@
     }
 
     function handleLogoClick() {
-      if (currentTeacher) {
-        backToDashboard();
-      } else {
-        switchTeacherLogin();
-      }
+      if (currentTeacher) backToDashboard();
+      else switchTeacherLogin();
     }
 
     function switchTeacherLogin() {
@@ -531,7 +554,9 @@
       cleanUrl();
     }
 
-    // ---------- โหมดสถิตินักเรียน (Student Portal) ----------
+    // ==========================================
+    // หน้านักเรียน: แสดงผลเปรียบเทียบกับเพื่อนในห้อง
+    // ==========================================
     async function loadStudentPortal(studentId) {
       document.getElementById('loginSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.add('hidden');
@@ -544,7 +569,7 @@
       container.innerHTML = `
         <div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">
           <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-500 mb-2"></i>
-          <p>กำลังค้นหาข้อมูลและสถิติของนักเรียนรหัส: <strong>${escapeHtml(studentId)}</strong>...</p>
+          <p>กำลังวิเคราะห์สถิติและเปรียบเทียบกับเพื่อนในห้อง: <strong>${escapeHtml(studentId)}</strong>...</p>
         </div>
       `;
 
@@ -555,89 +580,87 @@
             <i class="fa-solid fa-circle-exclamation text-4xl text-rose-500 mb-3"></i>
             <h4 class="text-lg font-bold text-slate-800">ไม่พบข้อมูลนักเรียน</h4>
             <p class="text-slate-500 text-sm mt-1">${escapeHtml(res.message || 'รหัสนักเรียนไม่ถูกต้อง')}</p>
-            <button onclick="promptStudentSearch()" class="mt-4 bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl">
-              ค้นหารหัสอื่น
-            </button>
+            <button onclick="promptStudentSearch()" class="mt-4 bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl">ค้นหารหัสอื่น</button>
           </div>
         `;
         return;
       }
 
-      // แสดงข้อมูลโปรไฟล์
       const std = res.student;
       document.getElementById('stdProfileImg').src = std.imageUrl;
       document.getElementById('stdProfileName').innerText = std.name;
       document.getElementById('stdProfileId').innerText = std.id;
-      document.getElementById('stdProfileClass').innerText = (std.level ? std.level : '-') + (std.room ? ' / ' + std.room : '');
+      document.getElementById('stdProfileClass').innerText = (std.level || '-') + ' / ' + (std.room || '-');
 
-      // สรุปตัวเลข
-      const stats = res.stats;
-      document.getElementById('stdStatsActCount').innerText = stats.totalActivitiesJoined || 0;
-      document.getElementById('stdStatsTotalCheckins').innerText = stats.totalCheckinEvents || 0;
-
-      // แสดงการ์ดกิจกรรมแต่ละรายการ
-      const actList = stats.activities || [];
+      const actList = res.stats.activities || [];
       if (actList.length === 0) {
         container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">ยังไม่มีประวัติการบันทึกกิจกรรมในระบบ</div>`;
         return;
       }
 
       container.innerHTML = '';
-      actList.forEach((act, idx) => {
+      actList.forEach((act) => {
         const card = document.createElement('div');
         card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4";
 
-        let badgeType = (act.type == '1' ? 'เช็คครั้งเดียว' : act.type == '2' ? 'เวลาเข้า-ออก' : 'ละหมาด');
+        let statusBadge = act.isPass
+          ? `<span class="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-3 py-1 rounded-full flex items-center gap-1 border border-emerald-300">
+               <i class="fa-solid fa-circle-check text-emerald-600"></i> ผ่านเกณฑ์การเข้าร่วม
+             </span>`
+          : `<span class="bg-rose-100 text-rose-800 text-xs font-extrabold px-3 py-1 rounded-full flex items-center gap-1 border border-rose-300 animate-pulse">
+               <i class="fa-solid fa-triangle-exclamation text-rose-600"></i> ไม่ผ่านเกณฑ์ (ต้องบำเพ็ญประโยชน์จิตอาสา)
+             </span>`;
 
-        let logsHtml = '';
-        if (act.logs && act.logs.length > 0) {
-          logsHtml = `
-            <div class="overflow-x-auto mt-3">
-              <table class="w-full text-xs text-left border-collapse">
-                <thead>
-                  <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
-                    <th class="py-2 px-3">วันที่ / เวลาบันทึก</th>
-                    <th class="py-2 px-3">รอบที่เช็ค</th>
-                    <th class="py-2 px-3">ครูผู้ตรวจ</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-          `;
-          act.logs.forEach(log => {
-            let roundsText = [];
-            for (let r in log.roundTimes) {
-              if (log.roundTimes[r]) {
-                roundsText.push(`<span class="inline-block bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-semibold mr-1 mb-1">${escapeHtml(r)}: ${escapeHtml(log.roundTimes[r])}</span>`);
-              }
-            }
-            logsHtml += `
-              <tr class="hover:bg-slate-50/50">
-                <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(log.recordedAt)}</td>
-                <td class="py-2.5 px-3">${roundsText.length ? roundsText.join('') : '<span class="text-slate-400">-</span>'}</td>
-                <td class="py-2.5 px-3 text-slate-500">${escapeHtml(log.teacher)}</td>
-              </tr>
-            `;
-          });
-          logsHtml += `</tbody></table></div>`;
-        } else {
-          logsHtml = `<p class="text-xs text-slate-400 italic">ยังไม่มีการบันทึกเวลาในกิจกรรมนี้</p>`;
-        }
+        let progressColor = act.isPass ? 'bg-emerald-500' : 'bg-rose-500';
+
+        let deficitMsg = act.isPass
+          ? `<p class="text-xs text-emerald-600 font-semibold mt-1">ยินดีด้วย! คุณผ่านเกณฑ์ ${act.passThreshold}% ของกิจกรรมนี้</p>`
+          : `<p class="text-xs text-rose-600 font-bold mt-1"><i class="fa-solid fa-circle-exclamation mr-1"></i>ขาดการเข้าร่วมอีก ${act.deficit} ครั้ง เพื่อให้ครบเกณฑ์ผ่าน (ต้องสแกนอย่างน้อย ${act.requiredCount} ครั้ง)</p>`;
 
         card.innerHTML = `
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
             <div>
-              <span class="text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full">${badgeType}</span>
+              <span class="text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full">${act.type == '1' ? 'เช็คครั้งเดียว' : act.type == '2' ? 'เข้า-ออก' : 'ละหมาด'}</span>
               <h4 class="text-lg font-bold text-slate-800 mt-1">${escapeHtml(act.activityName)}</h4>
+              <p class="text-[11px] text-slate-400">เปรียบเทียบในกลุ่ม: ระดับชั้น ${escapeHtml(act.peerGroup)} (เพื่อนทั้งหมด ${act.totalClassmates} คน)</p>
             </div>
-            <div class="text-right">
-              <span class="text-xs text-slate-400">เข้าร่วมแล้ว</span>
-              <span class="text-lg font-extrabold text-indigo-600 ml-1">${act.joinedCount}</span>
-              <span class="text-xs text-slate-400">วัน</span>
-            </div>
+            <div class="shrink-0">${statusBadge}</div>
           </div>
-          <div>
-            <p class="text-xs font-bold text-slate-500 mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ประวัติการเช็คชื่อ:</p>
-            ${logsHtml}
+
+          <!-- เปอร์เซ็นต์ & กราฟแท่งเทียบกับค่าสแกนสูงสุด -->
+          <div class="space-y-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+            <div class="flex justify-between items-center text-xs font-bold text-slate-600">
+              <span>เปอร์เซ็นต์การเข้าร่วม:</span>
+              <span class="text-base ${act.isPass ? 'text-emerald-600' : 'text-rose-600'} font-extrabold">${act.percent}%</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="relative w-full bg-slate-200 h-3.5 rounded-full overflow-hidden">
+              <div class="${progressColor} h-full transition-all duration-700" style="width: ${Math.min(100, act.percent)}%"></div>
+              <!-- ขีดบอกเกณฑ์ 80% -->
+              <div class="absolute top-0 bottom-0 w-0.5 bg-amber-500" style="left: ${act.passThreshold}%" title="เกณฑ์ผ่าน ${act.passThreshold}%"></div>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-400">
+              <span>0%</span>
+              <span class="text-amber-600 font-semibold">เกณฑ์ผ่าน: ${act.passThreshold}%</span>
+              <span>100% (ค่าสูงสุดในห้อง)</span>
+            </div>
+
+            <!-- สรุปตัวเลขเปรียบเทียบ -->
+            <div class="grid grid-cols-3 gap-2 text-center pt-2 mt-1 border-t border-slate-200/60">
+              <div>
+                <span class="text-[10px] text-slate-400 block">คุณสแกนแล้ว</span>
+                <span class="text-sm font-extrabold text-indigo-600">${act.myCount} ครั้ง</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">สูงสุดในห้อง</span>
+                <span class="text-sm font-extrabold text-slate-700">${act.maxScansInClass} ครั้ง</span>
+              </div>
+              <div>
+                <span class="text-[10px] text-slate-400 block">เฉลี่ยของห้อง</span>
+                <span class="text-sm font-extrabold text-slate-700">${act.avgScansInClass} ครั้ง</span>
+              </div>
+            </div>
+            ${deficitMsg}
           </div>
         `;
         container.appendChild(card);
@@ -652,102 +675,187 @@
         inputPlaceholder: 'เช่น 66209010001',
         showCancelButton: true,
         confirmButtonText: 'ค้นหา',
-        cancelButtonText: 'ยกเลิก',
-        inputValidator: (value) => {
-          if (!value || !value.trim()) return 'กรุณากรอกรหัสประจำตัวนักเรียน';
-        }
+        cancelButtonText: 'ยกเลิก'
       }).then((result) => {
-        if (result.isConfirmed) {
-          const id = result.value.trim();
-          loadStudentPortal(id);
+        if (result.isConfirmed && result.value.trim()) {
+          loadStudentPortal(result.value.trim());
         }
       });
     }
 
-    // ---------- ครู: แท็บและการจัดการแดชบอร์ด ----------
+    // ==========================================
+    // ครู: การสลับแท็บ และระบบประเมินจิตอาสา
+    // ==========================================
     function switchTab(tab) {
-      const isAct = (tab === 'activities');
-      document.getElementById('tabContentActivities').classList.toggle('hidden', !isAct);
-      document.getElementById('tabContentStats').classList.toggle('hidden', isAct);
+      document.getElementById('tabContentActivities').classList.toggle('hidden', tab !== 'activities');
+      document.getElementById('tabContentEval').classList.toggle('hidden', tab !== 'eval');
+      document.getElementById('tabContentStats').classList.toggle('hidden', tab !== 'stats');
 
-      document.getElementById('tabBtnActivities').className = isAct
-        ? "px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition"
-        : "px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+      ['tabBtnActivities', 'tabBtnEval', 'tabBtnStats'].forEach(btnId => {
+        document.getElementById(btnId).className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+      });
 
-      document.getElementById('tabBtnStats').className = !isAct
-        ? "px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition"
-        : "px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
-
-      if (!isAct) {
+      if (tab === 'activities') {
+        document.getElementById('tabBtnActivities').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition";
+      } else if (tab === 'eval') {
+        document.getElementById('tabBtnEval').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition";
+        populateEvalActivities();
+      } else if (tab === 'stats') {
+        document.getElementById('tabBtnStats').className = "px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-indigo-600 text-white shadow-sm transition";
         loadDashboardStats();
       }
     }
 
-    async function loadDashboardStats() {
-      const tbody = document.getElementById('statsTableBody');
-      tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดสถิติล่าสุด...</td></tr>`;
+    // โหลดรายชื่อกิจกรรมลง Dropdown หน้าประเมิน
+    async function populateEvalActivities() {
+      const select = document.getElementById('evalActSelect');
+      select.innerHTML = '<option value="">กำลังโหลดกิจกรรม...</option>';
 
-      const res = await apiCall('getDashboardStats');
+      const res = await apiCall('getActivities');
+      if (res.success && res.data && res.data.length > 0) {
+        select.innerHTML = '';
+        res.data.forEach(a => {
+          const opt = document.createElement('option');
+          opt.value = a.name;
+          opt.textContent = a.name;
+          select.appendChild(opt);
+        });
+        runActivityEvaluation();
+      } else {
+        select.innerHTML = '<option value="">ยังไม่มีกิจกรรม</option>';
+      }
+    }
+
+    // ประมวลผลเกณฑ์การเข้าร่วมกิจกรรม
+    async function runActivityEvaluation() {
+      const actName = document.getElementById('evalActSelect').value;
+      const threshold = document.getElementById('evalThresholdSelect').value;
+      if (!actName) return;
+
+      const tbody = document.getElementById('evalTableBody');
+      tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังคำนวณเปอร์เซ็นต์เทียบกับเพื่อนในห้อง...</td></tr>`;
+
+      const res = await apiCall('getActivityEvaluation', { activityName: actName, passThreshold: threshold });
       if (!res.success) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-rose-500">${escapeHtml(res.message || 'ไม่สามารถโหลดสถิติได้')}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-rose-500">${escapeHtml(res.message || 'ประเมินผลไม่สำเร็จ')}</td></tr>`;
         return;
       }
 
-      const st = res.stats;
-      document.getElementById('statTotalActivities').innerText = st.totalActivities || 0;
-      document.getElementById('statTodayTotal').innerText = st.totalTodayCheckins || 0;
-      document.getElementById('statAllTimeTotal').innerText = st.totalAllTimeCheckins || 0;
+      currentEvalData = res;
 
-      const actList = st.activities || [];
-      if (actList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">ยังไม่มีข้อมูลกิจกรรม</td></tr>`;
+      // อัปเดตตัวเลือกห้องเรียน
+      const classSelect = document.getElementById('evalClassSelect');
+      classSelect.innerHTML = '<option value="ALL">-- แสดงทุกห้อง --</option>';
+      res.classKeys.forEach(k => {
+        const o = document.createElement('option');
+        o.value = k;
+        o.textContent = k;
+        classSelect.appendChild(o);
+      });
+
+      filterEvalTable();
+    }
+
+    // กรองตารางตามห้องและสถานะ (ผ่าน/จิตอาสา)
+    function filterEvalTable() {
+      if (!currentEvalData) return;
+
+      const selectedClass = document.getElementById('evalClassSelect').value;
+      const statusFilter = document.getElementById('evalStatusFilter').value;
+
+      let list = currentEvalData.students || [];
+
+      if (selectedClass !== 'ALL') {
+        list = list.filter(s => s.classKey === selectedClass);
+      }
+      if (statusFilter === 'PASS') {
+        list = list.filter(s => s.isPass);
+      } else if (statusFilter === 'FAIL') {
+        list = list.filter(s => !s.isPass);
+      }
+
+      // สรุปตัวเลข
+      document.getElementById('evalTotalCount').innerText = list.length;
+      document.getElementById('evalPassCount').innerText = list.filter(s => s.isPass).length;
+      document.getElementById('evalFailCount').innerText = list.filter(s => !s.isPass).length;
+
+      const tbody = document.getElementById('evalTableBody');
+      if (list.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="py-8 text-center text-slate-400">ไม่พบรายชื่อนักเรียนตามเงื่อนไขที่เลือก</td></tr>`;
         return;
       }
 
       tbody.innerHTML = '';
-      actList.forEach(act => {
+      list.forEach((s) => {
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+        tr.className = `hover:bg-slate-50 transition ${s.isPass ? '' : 'bg-rose-50/30'}`;
 
-        let roundsBadge = [];
-        for (let r in act.roundStats) {
-          roundsBadge.push(`<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs mr-1 mb-1"><strong>${escapeHtml(r)}:</strong> ${act.roundStats[r]}</span>`);
-        }
+        let statusCol = s.isPass
+          ? `<span class="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-2 py-0.5 rounded-full">ผ่านเกณฑ์</span>`
+          : `<span class="bg-rose-100 text-rose-800 text-[11px] font-bold px-2 py-0.5 rounded-full"><i class="fa-solid fa-triangle-exclamation mr-0.5"></i>ต้องบำเพ็ญประโยชน์</span>`;
 
         tr.innerHTML = `
-          <td class="py-3 px-3 font-bold text-slate-800">${escapeHtml(act.name)}</td>
-          <td class="py-3 px-3"><span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">${escapeHtml(act.type == '1' ? 'ครั้งเดียว' : act.type == '2' ? 'เข้า-ออก' : 'ละหมาด')}</span></td>
-          <td class="py-3 px-3 text-center font-extrabold text-emerald-600">${act.todayCount}</td>
-          <td class="py-3 px-3 text-center font-semibold text-slate-600">${act.totalCount}</td>
-          <td class="py-3 px-3">${roundsBadge.length ? roundsBadge.join('') : '-'}</td>
+          <td class="py-2.5 px-3 font-mono font-bold text-slate-700">${escapeHtml(s.id)}</td>
+          <td class="py-2.5 px-3 font-semibold text-slate-800">${escapeHtml(s.name)}</td>
+          <td class="py-2.5 px-3 text-slate-600">${escapeHtml(s.classKey)}</td>
+          <td class="py-2.5 px-3 text-center font-bold text-indigo-600">${s.count}</td>
+          <td class="py-2.5 px-3 text-center font-medium text-slate-500">${s.maxScan}</td>
+          <td class="py-2.5 px-3 text-center font-extrabold ${s.isPass ? 'text-emerald-600' : 'text-rose-600'}">${s.percent}%</td>
+          <td class="py-2.5 px-3 text-center">${statusCol}</td>
+          <td class="py-2.5 px-3 text-center font-bold ${s.deficit > 0 ? 'text-rose-600' : 'text-slate-400'}">${s.deficit > 0 ? s.deficit : '-'}</td>
         `;
         tbody.appendChild(tr);
+      });
+    }
+
+    // คัดลอกรายชื่อนักเรียนที่ไม่ผ่านเกณฑ์เพื่อนำไปลงโทษจิตอาสา
+    function copyFailedStudentsList() {
+      if (!currentEvalData || !currentEvalData.students) {
+        return Swal.fire({ icon: 'warning', text: 'กรุณาเลือกและประมวลผลกิจกรรมก่อน' });
+      }
+
+      const failedList = currentEvalData.students.filter(s => !s.isPass);
+      if (failedList.length === 0) {
+        return Swal.fire({ icon: 'success', title: 'ยอดเยี่ยมมาก!', text: 'ไม่มีนักเรียนตกเกณฑ์ในกิจกรรมนี้ ทุกคนผ่านเกณฑ์ทั้งหมดครับ' });
+      }
+
+      let text = `📋 รายชื่อนักเรียนที่ไม่ผ่านเกณฑ์กิจกรรม (ต้องบำเพ็ญประโยชน์จิตอาสา)\n`;
+      text += `กิจกรรม: ${currentEvalData.activityName} (เกณฑ์ผ่าน ${currentEvalData.passThreshold}%)\n`;
+      text += `จำนวนทั้งหมด: ${failedList.length} คน\n`;
+      text += `------------------------------------\n`;
+
+      failedList.forEach((s, idx) => {
+        text += `${idx + 1}. [${s.id}] ${s.name} (${s.classKey}) - สแกนได้ ${s.count}/${s.maxScan} ครั้ง (${s.percent}%) ขาดอีก ${s.deficit} ครั้ง\n`;
+      });
+
+      navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกรายชื่อสำเร็จ!',
+          text: `คัดลอกรายชื่อเด็กจิตอาสาจำนวน ${failedList.length} คน เรียบร้อยแล้ว สามารถนำไปวางใน LINE หรือเอกสารได้ทันที`,
+          confirmButtonText: 'ตกลง'
+        });
+      }).catch(() => {
+        Swal.fire({ icon: 'info', title: 'รายชื่อนักเรียนจิตอาสา', text: text });
       });
     }
 
     function copyStudentLink() {
       const input = document.getElementById('shareStudentIdInput');
       const val = (input.value || '').trim();
-      if (!val) {
-        return Swal.fire({ icon: 'warning', text: 'กรุณากรอกรหัสนักเรียนก่อนคัดลอกลิงก์' });
-      }
+      if (!val) return Swal.fire({ icon: 'warning', text: 'กรุณากรอกรหัสนักเรียน' });
 
       const currentOrigin = window.location.origin + window.location.pathname.replace(/\/std\/?$/, '');
       const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "/std/?id=" + encodeURIComponent(val);
 
       navigator.clipboard.writeText(studentUrl).then(() => {
-        Swal.fire({
-          icon: 'success',
-          title: 'คัดลอกลิงก์สำเร็จ!',
-          text: studentUrl,
-          confirmButtonText: 'ตกลง'
-        });
+        Swal.fire({ icon: 'success', title: 'คัดลอกลิงก์สำเร็จ!', text: studentUrl });
       }).catch(() => {
         Swal.fire({ icon: 'info', title: 'ลิงก์สำหรับนักเรียน:', text: studentUrl });
       });
     }
 
-    // ---------- ครู: ฟังก์ชันจัดการทั่วไป ----------
+    // ---------- จัดการระบบทั่วไปของครู ----------
     async function executeAutoLogin(teacherId) {
       Swal.fire({ title: 'กำลังเข้าสู่ระบบอัตโนมัติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const res = await apiCall('login', { teacherId: teacherId, idCard: null });
@@ -839,15 +947,34 @@
             </div>
             <h4 class="act-name text-xl font-bold text-slate-800 mt-2"></h4>
           </div>
-          <button class="btn-go w-full mt-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold py-2 rounded-xl text-sm transition text-center">
-            <i class="fa-solid fa-bolt mr-2 text-amber-500"></i> เข้าสู่หน้าสแกน
-          </button>
+          <div class="grid grid-cols-2 gap-2 mt-4">
+            <button class="btn-eval bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold py-2 rounded-xl text-xs transition text-center">
+              <i class="fa-solid fa-scale-balanced mr-1"></i> ประเมินจิตอาสา
+            </button>
+            <button class="btn-go bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold py-2 rounded-xl text-xs transition text-center">
+              <i class="fa-solid fa-bolt mr-1 text-amber-500"></i> เข้าหน้าสแกน
+            </button>
+          </div>
         `;
         card.querySelector('.act-name').textContent = act.name;
         card.querySelector('.btn-del').addEventListener('click', () => confirmDeleteActivity(act.name));
         card.querySelector('.btn-go').addEventListener('click', () => goToScanDashboard(act.name, act.type, act.config));
+        card.querySelector('.btn-eval').addEventListener('click', () => {
+          switchTab('eval');
+          document.getElementById('evalActSelect').value = act.name;
+          runActivityEvaluation();
+        });
         container.appendChild(card);
       });
+    }
+
+    async function loadDashboardStats() {
+      const res = await apiCall('getDashboardStats');
+      if (res.success && res.stats) {
+        document.getElementById('statTotalActivities').innerText = res.stats.totalActivities || 0;
+        document.getElementById('statTodayTotal').innerText = res.stats.totalTodayCheckins || 0;
+        document.getElementById('statAllTimeTotal').innerText = res.stats.totalAllTimeCheckins || 0;
+      }
     }
 
     function escapeHtml(str) {
@@ -883,7 +1010,7 @@
         loadActivities();
       } else if (res.code !== 'AUTH') {
         playFailSound();
-        Swal.fire({ icon: 'error', title: 'สร้างกิจกรรมไม่สำเร็จ', text: res.message || 'พบชื่อกิจกรรมซ้ำในระบบ' });
+        Swal.fire({ icon: 'error', title: 'สร้างกิจกรรมไม่สำเร็จ', text: res.message });
       }
     }
 
@@ -899,15 +1026,11 @@
       }).then(async (r) => {
         if (!r.isConfirmed) return;
         const res = await apiCall('deleteActivity', { name: name });
-        if (res.success) {
-          loadActivities();
-        } else if (res.code !== 'AUTH') {
-          Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: res.message });
-        }
+        if (res.success) loadActivities();
       });
     }
 
-    // ---------- โหลดฐานข้อมูล Preload Cache สำหรับสแกน ----------
+    // ---------- Preload Cache สำหรับสแกน ----------
     async function goToScanDashboard(name, type, configStr) {
       const config = (configStr || '').split(',').map(s => s.trim()).filter(Boolean);
       activeActivity = { name, type, config };
@@ -929,13 +1052,7 @@
         });
       });
 
-      Swal.fire({
-        title: 'กำลังเชื่อมต่อระบบความเร็วสูง...',
-        text: 'กำลังซิงค์ฐานข้อมูลนักเรียนเข้าสู่หน่วยความจำ',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
+      Swal.fire({ title: 'กำลังเชื่อมต่อระบบความเร็วสูง...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const res = await apiCall('getPreloadData', { activityName: name });
       Swal.close();
 
@@ -947,9 +1064,7 @@
 
         document.getElementById('attendanceInput').value = '';
         setTimeout(focusAttendanceInput, 300);
-        if (!focusKeepInterval) {
-          focusKeepInterval = setInterval(focusAttendanceInput, 1000);
-        }
+        if (!focusKeepInterval) focusKeepInterval = setInterval(focusAttendanceInput, 1000);
       } else if (res.code !== 'AUTH') {
         Swal.fire({ icon: 'error', title: 'โหลดข้อมูลไม่สำเร็จ', text: res.message });
         backToDashboard();
@@ -972,7 +1087,7 @@
       }
     }
 
-    // ---------- กล้องสแกน QR ----------
+    // ---------- QR Scanner & Camera ----------
     function openQrScanner() {
       if (!activeActivity || isCameraActive || cameraStartPromise) return;
 
@@ -984,15 +1099,9 @@
       const qrBoxSize = Math.floor(Math.min(window.innerWidth * 0.7, 300));
       html5QrCode = new Html5Qrcode("reader");
 
-      const config = {
-        fps: 15,
-        qrbox: { width: qrBoxSize, height: qrBoxSize },
-        aspectRatio: 1.0
-      };
-
       cameraStartPromise = html5QrCode.start(
         { facingMode: "environment" },
-        config,
+        { fps: 15, qrbox: { width: qrBoxSize, height: qrBoxSize }, aspectRatio: 1.0 },
         onScanSuccess,
         function () {}
       ).then(() => {
@@ -1004,11 +1113,7 @@
         isCameraActive = false;
         cameraStartPromise = null;
         document.getElementById('qrModal').classList.add('hidden');
-        Swal.fire({
-          icon: 'error',
-          title: 'ไม่สามารถเปิดกล้องได้',
-          text: 'กรุณาอนุญาตให้เว็บเข้าถึงกล้อง และเปิดผ่าน Chrome/Safari โดยตรง'
-        });
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถเปิดกล้องได้', text: 'กรุณาอนุญาตให้เว็บเข้าถึงกล้อง' });
       });
     }
 
@@ -1022,19 +1127,7 @@
           zoomFeature.apply(currentZoom);
           document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
           document.getElementById('zoomToggleBtn').classList.remove('hidden');
-          return;
         }
-      } catch (e) {}
-
-      try {
-        html5QrCode.applyVideoConstraints({ advanced: [{ zoom: 2 }] })
-          .then(() => {
-            currentZoom = 2;
-            zoomFeature = { fallback: true };
-            document.getElementById('zoomLabel').innerText = '2X';
-            document.getElementById('zoomToggleBtn').classList.remove('hidden');
-          })
-          .catch(() => {});
       } catch (e) {}
     }
 
@@ -1042,12 +1135,8 @@
       if (!zoomFeature) return;
       currentZoom = (currentZoom >= 2) ? 1 : 2;
       try {
-        if (zoomFeature.fallback) {
-          html5QrCode.applyVideoConstraints({ advanced: [{ zoom: currentZoom }] }).catch(() => {});
-        } else {
-          if (zoomFeature.max && currentZoom > zoomFeature.max()) currentZoom = zoomFeature.max();
-          zoomFeature.apply(currentZoom);
-        }
+        if (zoomFeature.max && currentZoom > zoomFeature.max()) currentZoom = zoomFeature.max();
+        zoomFeature.apply(currentZoom);
       } catch (e) {}
       document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
     }
@@ -1060,17 +1149,12 @@
         if (html5QrCode && isCameraActive) {
           const scanner = html5QrCode;
           isCameraActive = false;
-          scanner.stop()
-            .then(() => { try { scanner.clear(); } catch (e) {} })
-            .catch(() => {});
+          scanner.stop().then(() => { try { scanner.clear(); } catch (e) {} }).catch(() => {});
         }
       };
 
-      if (cameraStartPromise) {
-        cameraStartPromise.then(stopNow);
-      } else {
-        stopNow();
-      }
+      if (cameraStartPromise) cameraStartPromise.then(stopNow);
+      else stopNow();
       setTimeout(focusAttendanceInput, 300);
     }
 
@@ -1091,7 +1175,6 @@
     function focusAttendanceInput() {
       const input = document.getElementById('attendanceInput');
       const select = document.getElementById('modeOptionSelect');
-
       if (document.activeElement === select) return;
 
       const isScanVisible = !document.getElementById('scanSection').classList.contains('hidden');
@@ -1117,26 +1200,17 @@
 
     function processStudentAttendance(scanValue) {
       const modeOption = document.getElementById('modeOptionSelect').value;
-
       const student = cachedStudents[scanValue];
+
       if (!student) {
-        showErrorModal({
-          status: "NOT_FOUND",
-          message: "ไม่พบรหัสหรือบัตร RFID นี้ในฐานข้อมูลนักเรียน"
-        });
+        showErrorModal({ status: "NOT_FOUND", message: "ไม่พบรหัสหรือบัตร RFID นี้ในฐานข้อมูลนักเรียน" });
         return;
       }
 
-      if (!cachedTodayScanned[modeOption]) {
-        cachedTodayScanned[modeOption] = {};
-      }
+      if (!cachedTodayScanned[modeOption]) cachedTodayScanned[modeOption] = {};
 
       if (cachedTodayScanned[modeOption][student.id]) {
-        showErrorModal({
-          status: "DUPLICATE",
-          message: "นักเรียนรายนี้ได้บันทึกเวลาในรอบ " + modeOption + " ไปแล้วครับ",
-          student: student
-        });
+        showErrorModal({ status: "DUPLICATE", message: "นักเรียนรายนี้ได้บันทึกเวลาในรอบ " + modeOption + " ไปแล้วครับ", student: student });
         return;
       }
 
@@ -1158,20 +1232,11 @@
     }
 
     function revertScan(student, modeOption, message) {
-      console.error("บันทึกเบื้องหลังขัดข้อง:", message);
       if (cachedTodayScanned[modeOption]) delete cachedTodayScanned[modeOption][student.id];
       todayTotalCount = Math.max(0, todayTotalCount - 1);
       updateCounter();
       playFailSound();
-      Swal.fire({
-        toast: true,
-        position: 'top',
-        icon: 'error',
-        title: 'บันทึกไม่สำเร็จ: ' + student.name,
-        text: 'กรุณาสแกนใหม่อีกครั้ง',
-        showConfirmButton: false,
-        timer: 4000
-      });
+      Swal.fire({ toast: true, position: 'top', icon: 'error', title: 'บันทึกไม่สำเร็จ: ' + student.name, timer: 4000 });
     }
 
     function backToDashboard() {
@@ -1179,10 +1244,7 @@
       document.getElementById('scanSection').classList.add('hidden');
       document.getElementById('studentPortalSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
-      if (focusKeepInterval) {
-        clearInterval(focusKeepInterval);
-        focusKeepInterval = null;
-      }
+      if (focusKeepInterval) { clearInterval(focusKeepInterval); focusKeepInterval = null; }
       loadActivities();
     }
 
