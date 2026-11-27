@@ -502,7 +502,7 @@
     // ---------- Router & Initialization ----------
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-      const isStudentPath = window.location.pathname.toLowerCase().includes('/std');
+      const isStudentPath = window.location.pathname.toLowerCase().includes('std');
       const stdParam = (params.get('std') || '').trim();
       const idParam = (params.get('id') || '').trim();
 
@@ -845,8 +845,8 @@
       const val = (input.value || '').trim();
       if (!val) return Swal.fire({ icon: 'warning', text: 'กรุณากรอกรหัสนักเรียน' });
 
-      const currentOrigin = window.location.origin + window.location.pathname.replace(/\/std\/?$/, '');
-      const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "/std/?id=" + encodeURIComponent(val);
+      const currentOrigin = window.location.origin + window.location.pathname.replace(/\std\/?$/, '');
+      const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "std/?id=" + encodeURIComponent(val);
 
       navigator.clipboard.writeText(studentUrl).then(() => {
         Swal.fire({ icon: 'success', title: 'คัดลอกลิงก์สำเร็จ!', text: studentUrl });
