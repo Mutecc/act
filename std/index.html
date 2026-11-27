@@ -16,7 +16,7 @@
   <style>
     body { font-family: 'Sarabun', sans-serif; }
     #reader { border: none !important; }
-    #reader video { object-fit: cover !important; }
+    #reader video { object-fit: cover !important; transition: transform 0.25s ease-out; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
@@ -324,7 +324,7 @@
 
   <!-- ==================== Modals ==================== -->
 
-  <!-- QR SCANNER MODAL (มีปุ่มสลับกล้อง หน้า-หลัง) -->
+  <!-- QR SCANNER MODAL (มีปุ่มสลับกล้อง หน้า-หลัง + ปุ่มซูม 2X ใช้งานได้ทั้ง 2 กล้อง) -->
   <div id="qrModal" class="hidden fixed inset-0 bg-black z-40 flex flex-col justify-between p-4">
     <div class="flex justify-between items-center text-white py-2">
       <div class="min-w-0">
@@ -351,12 +351,12 @@
           <span id="camFacingLabel">กล้องหลัง</span>
         </button>
 
-        <!-- ปุ่มซูม 2X (สำหรับกล้องหลัง) -->
-        <button id="zoomToggleBtn" onclick="toggleZoom()" class="hidden bg-amber-400 text-slate-900 font-bold px-3 py-2.5 rounded-xl text-xs active:scale-95 transition shrink-0">
+        <!-- ปุ่มซูม 2X (รองรับทั้งกล้องหน้าและกล้องหลัง) -->
+        <button id="zoomToggleBtn" onclick="toggleZoom()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-bold px-3.5 py-2.5 rounded-xl text-xs active:scale-95 transition shrink-0 flex items-center">
           <i class="fa-solid fa-magnifying-glass-plus mr-1"></i><span id="zoomLabel">2X</span>
         </button>
       </div>
-      <p class="text-xs text-slate-300 text-center">กดปุ่มสลับกล้องได้ตามต้องการ — สแกนต่อเนื่องได้ทันที</p>
+      <p class="text-xs text-slate-300 text-center">สลับกล้องหน้า/หลัง และกดปุ่มซูม 2X ได้ทั้งสองกล้องตามต้องการ</p>
     </div>
   </div>
 
@@ -448,11 +448,11 @@
 
     let currentEvalData = null;
 
-    // สถานะกล้อง + สลับกล้องหน้า/หลัง
+    // สถานะกล้อง + สลับกล้องหน้า/หลัง + ซูม
     let html5QrCode = null;
     let isCameraActive = false;
     let cameraStartPromise = null;
-    let currentFacingMode = "environment"; // เริ่มต้นด้วย "environment" (กล้องหลัง) หรือ "user" (กล้องหน้า)
+    let currentFacingMode = "environment"; // "environment" (หลัง) หรือ "user" (หน้า)
     let scanLockUntil = 0;
     let lastScanText = '';
     let lastScanTime = 0;
@@ -507,7 +507,7 @@
     // ---------- Router & Initialization ----------
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-      const isStudentPath = window.location.pathname.toLowerCase().includes('std');
+      const isStudentPath = window.location.pathname.toLowerCase().includes('/std');
       const stdParam = (params.get('std') || '').trim();
       const idParam = (params.get('id') || '').trim();
 
@@ -840,8 +840,8 @@
       const val = (input.value || '').trim();
       if (!val) return Swal.fire({ icon: 'warning', text: 'กรุณากรอกรหัสนักเรียน' });
 
-      const currentOrigin = window.location.origin + window.location.pathname.replace(/\std\/?$/, '');
-      const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "std/?id=" + encodeURIComponent(val);
+      const currentOrigin = window.location.origin + window.location.pathname.replace(/\/std\/?$/, '');
+      const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "/std/?id=" + encodeURIComponent(val);
 
       navigator.clipboard.writeText(studentUrl).then(() => {
         Swal.fire({ icon: 'success', title: 'คัดลอกลิงก์สำเร็จ!', text: studentUrl });
@@ -851,7 +851,7 @@
     }
 
     // ==========================================
-    // กล้อง QR Code + สลับกล้องหน้า/หลัง
+    // กล้อง QR Code + สลับกล้องหน้า/หลัง + ปุ่มซูม 2X (รองรับทั้ง 2 กล้อง)
     // ==========================================
     function openQrScanner() {
       if (!activeActivity || isCameraActive || cameraStartPromise) return;
@@ -859,8 +859,11 @@
       document.getElementById('qrModal').classList.remove('hidden');
       document.getElementById('qrModeSelect').value = document.getElementById('modeOptionSelect').value;
       document.getElementById('qrCounter').innerText = todayTotalCount;
-      document.getElementById('zoomToggleBtn').classList.add('hidden');
       document.getElementById('camFacingLabel').innerText = (currentFacingMode === "environment" ? "กล้องหลัง" : "กล้องหน้า");
+      
+      // แสดงปุ่มซูมตลอดทั้ง 2 กล้อง
+      document.getElementById('zoomToggleBtn').classList.remove('hidden');
+      document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
 
       startCameraWithMode(currentFacingMode);
     }
@@ -883,11 +886,7 @@
       ).then(() => {
         isCameraActive = true;
         cameraStartPromise = null;
-        if (facingMode === "environment") {
-          setupZoom();
-        } else {
-          document.getElementById('zoomToggleBtn').classList.add('hidden');
-        }
+        setupZoom(); // เรียกตั้งค่าซูมทั้งกล้องหน้าและกล้องหลัง
       }).catch(err => {
         console.error("Camera error:", err);
         isCameraActive = false;
@@ -920,33 +919,90 @@
       }
     }
 
+    // ตั้งค่าซูม 2X (รองรับทั้ง Hardware Zoom และ CSS Digital Zoom เมื่อเป็นกล้องหน้า)
     function setupZoom() {
       zoomFeature = null;
+      document.getElementById('zoomToggleBtn').classList.remove('hidden');
+
+      // 1. ลองใช้ Hardware Camera Capability
       try {
         const caps = html5QrCode.getRunningTrackCameraCapabilities();
         if (caps && caps.zoomFeature && caps.zoomFeature().isSupported()) {
           zoomFeature = caps.zoomFeature();
           currentZoom = Math.min(2, zoomFeature.max());
           zoomFeature.apply(currentZoom);
+          applyCssZoom(1); // รีเซ็ต CSS
           document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
-          document.getElementById('zoomToggleBtn').classList.remove('hidden');
+          return;
         }
       } catch (e) {}
+
+      // 2. ลองใช้ applyVideoConstraints
+      try {
+        html5QrCode.applyVideoConstraints({ advanced: [{ zoom: 2 }] })
+          .then(() => {
+            currentZoom = 2;
+            zoomFeature = { fallback: true };
+            applyCssZoom(1);
+            document.getElementById('zoomLabel').innerText = '2X';
+          })
+          .catch(() => {
+            // 3. ถ้ากล้องไม่รองรับ ให้ใช้ Digital Zoom บน <video> แทน ทำให้ซูมได้ 100% ทั้ง 2 กล้อง
+            zoomFeature = { cssZoom: true };
+            currentZoom = 2;
+            applyCssZoom(2);
+            document.getElementById('zoomLabel').innerText = '2X';
+          });
+      } catch (e) {
+        zoomFeature = { cssZoom: true };
+        currentZoom = 2;
+        applyCssZoom(2);
+        document.getElementById('zoomLabel').innerText = '2X';
+      }
     }
 
     function toggleZoom() {
-      if (!zoomFeature) return;
       currentZoom = (currentZoom >= 2) ? 1 : 2;
-      try {
-        if (zoomFeature.max && currentZoom > zoomFeature.max()) currentZoom = zoomFeature.max();
-        zoomFeature.apply(currentZoom);
-      } catch (e) {}
+
+      if (zoomFeature && zoomFeature.apply) {
+        try {
+          if (zoomFeature.max && currentZoom > zoomFeature.max()) currentZoom = zoomFeature.max();
+          zoomFeature.apply(currentZoom);
+        } catch (e) {
+          applyCssZoom(currentZoom);
+        }
+      } else if (zoomFeature && zoomFeature.fallback) {
+        try {
+          html5QrCode.applyVideoConstraints({ advanced: [{ zoom: currentZoom }] }).catch(() => {
+            applyCssZoom(currentZoom);
+          });
+        } catch (e) {
+          applyCssZoom(currentZoom);
+        }
+      } else {
+        applyCssZoom(currentZoom);
+      }
+
       document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
+    }
+
+    // ระบบ Digital Zoom สำรองสำหรับกล้องหน้า/อุปกรณ์ที่ไม่รองรับคำสั่ง hardware zoom
+    function applyCssZoom(zoomLevel) {
+      const video = document.querySelector('#reader video');
+      if (video) {
+        if (zoomLevel >= 2) {
+          video.style.transform = 'scale(1.4)';
+          video.style.transformOrigin = 'center center';
+        } else {
+          video.style.transform = 'scale(1)';
+        }
+      }
     }
 
     function closeQrScanner() {
       document.getElementById('qrModal').classList.add('hidden');
       zoomFeature = null;
+      applyCssZoom(1);
 
       const stopNow = () => {
         if (html5QrCode && isCameraActive) {
