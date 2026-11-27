@@ -11,7 +11,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-  <!-- HTML5-QRCode Library -->
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
@@ -24,7 +23,7 @@
 
   <!-- แถบเมนูด้านบน -->
   <nav class="bg-indigo-600 text-white shadow-md px-6 py-4 flex justify-between items-center">
-    <div class="flex items-center space-x-3">
+    <div class="flex items-center space-x-3 cursor-pointer" onclick="handleLogoClick()">
       <i class="fa-solid fa-id-card-clip text-2xl"></i>
       <span class="text-xl font-bold tracking-wide">MUTEC Activity System</span>
     </div>
@@ -34,12 +33,17 @@
         <i class="fa-solid fa-right-from-bracket mr-1"></i> ออกระบบ
       </button>
     </div>
+    <div id="studentNavBtn" class="hidden">
+      <button onclick="switchTeacherLogin()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 text-xs font-semibold rounded-lg transition">
+        <i class="fa-solid fa-user-tie mr-1"></i> หน้าเข้าสู่ระบบสำหรับครู
+      </button>
+    </div>
   </nav>
 
   <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
 
-    <!-- 1. หน้าล็อกอินสำหรับครู -->
-    <section id="loginSection" class="bg-white p-8 rounded-2xl shadow-xl max-w-md mx-auto mt-10 border border-slate-100">
+    <!-- ==================== 1. หน้าล็อกอินสำหรับครู ==================== -->
+    <section id="loginSection" class="bg-white p-8 rounded-2xl shadow-xl max-w-md mx-auto mt-6 border border-slate-100">
       <div class="text-center mb-6">
         <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
           <i class="fa-solid fa-lock text-2xl"></i>
@@ -66,23 +70,114 @@
           <i class="fa-solid fa-key mr-2"></i>เข้าสู่ระบบ
         </button>
       </form>
-    </section>
 
-    <!-- 2. หน้าแดชบอร์ดรายการกิจกรรม -->
-    <section id="dashboardSection" class="hidden space-y-6">
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-100 gap-4">
-        <div>
-          <h2 class="text-2xl font-bold text-slate-800">จัดการกิจกรรมนักเรียน</h2>
-          <p class="text-slate-500 text-sm">สร้างกิจกรรม กำหนดรอบสแกน และเปิดระบบบันทึกเวลาเข้าร่วม</p>
-        </div>
-        <button onclick="openCreateModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2.5 rounded-xl shadow-md transition">
-          <i class="fa-solid fa-plus mr-2"></i>สร้างกิจกรรมใหม่
+      <!-- ปุ่มสลับไปดูสถิตินักเรียน -->
+      <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+        <button onclick="promptStudentSearch()" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">
+          <i class="fa-solid fa-graduation-cap mr-1"></i> นักเรียน? คลิกที่นี่เพื่อตรวจสอบสถิติของตนเอง
         </button>
       </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="activityContainer"></div>
     </section>
 
-    <!-- 3. หน้าสแกนบัตร (Instant High-Speed Scan) -->
+    <!-- ==================== 2. หน้าแดชบอร์ดครู (กิจกรรม + สถิติภาพรวม) ==================== -->
+    <section id="dashboardSection" class="hidden space-y-6">
+      <!-- ส่วนแท็บเลือกโหมด -->
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-100 gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-800">ระบบจัดการกิจกรรม</h2>
+          <p class="text-slate-500 text-sm">ตรวจสอบสถิติ, จัดการกิจกรรม และเปิดระบบบันทึกเวลาเข้าร่วม</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="switchTab('activities')" id="tabBtnActivities" class="px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition">
+            <i class="fa-solid fa-list-check mr-1.5"></i> รายการกิจกรรม
+          </button>
+          <button onclick="switchTab('stats')" id="tabBtnStats" class="px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+            <i class="fa-solid fa-chart-pie mr-1.5"></i> แดชบอร์ดสถิติ
+          </button>
+          <button onclick="openCreateModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold px-4 py-2 rounded-xl text-sm shadow-md transition ml-1">
+            <i class="fa-solid fa-plus mr-1"></i> สร้างกิจกรรม
+          </button>
+        </div>
+      </div>
+
+      <!-- แท็บ 1: แสดงการ์ดกิจกรรม -->
+      <div id="tabContentActivities">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="activityContainer"></div>
+      </div>
+
+      <!-- แท็บ 2: แดชบอร์ดสรุปสถิติทุกกิจกรรมสำหรับครู -->
+      <div id="tabContentStats" class="hidden space-y-6">
+        <!-- 3 การ์ด KPI หลัก -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-400">กิจกรรมทั้งหมด</p>
+            <p class="text-3xl font-extrabold text-slate-800 mt-1" id="statTotalActivities">0</p>
+            <p class="text-[11px] text-slate-400 mt-1">รายการ</p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+              <i class="fa-solid fa-calendar-check"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-400">ยอดเช็คชื่อวันนี้ (ทุกกิจกรรม)</p>
+            <p class="text-3xl font-extrabold text-emerald-600 mt-1" id="statTodayTotal">0</p>
+            <p class="text-[11px] text-slate-400 mt-1">คน/รอบ</p>
+          </div>
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 text-center">
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 text-xl">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <p class="text-xs font-semibold text-slate-400">ยอดเช็คชื่อสะสมทั้งหมด</p>
+            <p class="text-3xl font-extrabold text-purple-600 mt-1" id="statAllTimeTotal">0</p>
+            <p class="text-[11px] text-slate-400 mt-1">ครั้ง</p>
+          </div>
+        </div>
+
+        <!-- เครื่องมือช่วยสร้างลิงก์สำหรับส่งให้นักเรียนดูสถิติตนเอง -->
+        <div class="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-2xl text-white shadow-md flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div>
+            <h4 class="text-lg font-bold"><i class="fa-solid fa-share-nodes mr-2"></i>ลิงก์ตรวจสอบสถิติสำหรับนักเรียน</h4>
+            <p class="text-xs text-indigo-100 mt-1">นักเรียนสามารถเข้าดูสถิติกิจกรรมของตนเองได้ผ่านลิงก์เฉพาะรายบุคคล</p>
+          </div>
+          <div class="flex w-full sm:w-auto gap-2">
+            <input type="text" id="shareStudentIdInput" placeholder="กรอกรหัสนักเรียน" class="w-full sm:w-44 px-3 py-2 rounded-xl text-slate-800 text-sm focus:outline-none">
+            <button onclick="copyStudentLink()" class="shrink-0 bg-white text-indigo-700 font-bold px-4 py-2 rounded-xl text-sm hover:bg-indigo-50 transition active:scale-95 shadow">
+              <i class="fa-solid fa-copy mr-1"></i> คัดลอกลิงก์
+            </button>
+          </div>
+        </div>
+
+        <!-- ตารางรายละเอียดสถิติแยกตามกิจกรรม -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+          <div class="flex justify-between items-center mb-4">
+            <h3 class="text-lg font-bold text-slate-800"><i class="fa-solid fa-chart-column mr-2 text-indigo-600"></i>สรุปสถิติแยกตามกิจกรรม</h3>
+            <button onclick="loadDashboardStats()" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">
+              <i class="fa-solid fa-rotate-right mr-1"></i> รีเฟรชสถิติ
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  <th class="py-3 px-3">ชื่อกิจกรรม</th>
+                  <th class="py-3 px-3">ประเภท</th>
+                  <th class="py-3 px-3 text-center">สแกนวันนี้</th>
+                  <th class="py-3 px-3 text-center">สะสมทั้งหมด</th>
+                  <th class="py-3 px-3">การสแกนแยกตามรอบ</th>
+                </tr>
+              </thead>
+              <tbody id="statsTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                <tr><td colspan="5" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังประมวลผลสถิติ...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== 3. หน้าสแกนบัตร (Instant High-Speed Scan) ==================== -->
     <section id="scanSection" class="hidden space-y-6">
       <button onclick="backToDashboard()" class="text-indigo-600 hover:text-indigo-800 font-semibold transition">
         <i class="fa-solid fa-arrow-left mr-2"></i>กลับหน้าหลัก
@@ -148,9 +243,61 @@
       </div>
     </section>
 
+    <!-- ==================== 4. หน้าแสดงสรุปสถิตินักเรียน (Student Portal) ==================== -->
+    <section id="studentPortalSection" class="hidden space-y-6">
+      <!-- การ์ดโปรไฟล์นักเรียน -->
+      <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 flex flex-col sm:flex-row items-center sm:items-start gap-6">
+        <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-indigo-100 shadow-lg shrink-0">
+          <img id="stdProfileImg" src="" alt="Student Profile" class="w-full h-full object-cover">
+        </div>
+        <div class="flex-1 text-center sm:text-left">
+          <span class="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full mb-2">
+            <i class="fa-solid fa-user-graduate mr-1"></i> นักเรียน
+          </span>
+          <h2 id="stdProfileName" class="text-2xl sm:text-3xl font-extrabold text-slate-800">ชื่อ-นามสกุล</h2>
+          <div class="mt-2 flex flex-wrap justify-center sm:justify-start gap-x-4 gap-y-1 text-sm text-slate-500 font-medium">
+            <span><i class="fa-solid fa-id-badge mr-1 text-slate-400"></i>รหัส: <strong id="stdProfileId" class="text-slate-700 font-mono"></strong></span>
+            <span><i class="fa-solid fa-school mr-1 text-slate-400"></i>ชั้น/ห้อง: <strong id="stdProfileClass" class="text-slate-700"></strong></span>
+          </div>
+        </div>
+        <!-- ค้นหารหัสอื่น -->
+        <button onclick="promptStudentSearch()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-2 rounded-xl font-semibold transition shrink-0">
+          <i class="fa-solid fa-magnifying-glass mr-1"></i> ค้นหารหัสอื่น
+        </button>
+      </div>
+
+      <!-- สรุปสถิติตัวเลขนักเรียน -->
+      <div class="grid grid-cols-2 gap-4">
+        <div class="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white p-5 rounded-2xl shadow-md text-center">
+          <p class="text-xs font-medium opacity-80">กิจกรรมที่เคยเข้าร่วม</p>
+          <p class="text-3xl sm:text-4xl font-extrabold my-1" id="stdStatsActCount">0</p>
+          <p class="text-[11px] opacity-70">กิจกรรม</p>
+        </div>
+        <div class="bg-gradient-to-br from-emerald-500 to-teal-600 text-white p-5 rounded-2xl shadow-md text-center">
+          <p class="text-xs font-medium opacity-80">จำนวนครั้งที่บันทึกเวลาสำเร็จ</p>
+          <p class="text-3xl sm:text-4xl font-extrabold my-1" id="stdStatsTotalCheckins">0</p>
+          <p class="text-[11px] opacity-70">ครั้ง</p>
+        </div>
+      </div>
+
+      <!-- รายการกิจกรรมแต่ละรายการของนักเรียน -->
+      <div class="space-y-4">
+        <h3 class="text-xl font-bold text-slate-800 flex items-center">
+          <i class="fa-solid fa-calendar-days mr-2 text-indigo-600"></i> รายการกิจกรรมและประวัติการบันทึกเวลา
+        </h3>
+        <div id="studentActivitiesContainer" class="space-y-4">
+          <div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">
+            <i class="fa-solid fa-spinner fa-spin mr-2"></i> กำลังโหลดประวัติกิจกรรมของนักเรียน...
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- QR SCANNER MODAL (เต็มจอ + ซูม 2X + สแกนต่อเนื่อง) -->
+  <!-- ==================== Modals ==================== -->
+
+  <!-- QR SCANNER MODAL -->
   <div id="qrModal" class="hidden fixed inset-0 bg-black z-40 flex flex-col justify-between p-4">
     <div class="flex justify-between items-center text-white py-2">
       <div class="min-w-0">
@@ -253,7 +400,7 @@
   </div>
 
   <script>
-    // ** Web App URL ของ Code.gs (ระบบบันทึกกิจกรรม) **
+    // ** Web App URL ของ Code.gs **
     const GAS_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby3asZnP31X6P3YFglO1Xf_2WCzq46tgSfwNYwrc7UtyGTllj8brWInV_zh5Ut1DFV4QA/exec";
 
     // ---------- State ----------
@@ -264,12 +411,10 @@
     let errorCloseTimeout = null;
     let focusKeepInterval = null;
 
-    // แคชข้อมูลนักเรียนและการสแกนวันนี้ไว้ในหน่วยความจำ
     let cachedStudents = {};
     let cachedTodayScanned = {};
     let todayTotalCount = 0;
 
-    // สถานะกล้องสแกน QR
     let html5QrCode = null;
     let isCameraActive = false;
     let cameraStartPromise = null;
@@ -324,16 +469,30 @@
       Swal.fire({ icon: 'warning', title: 'เซสชันหมดอายุ', text: message || 'กรุณาเข้าสู่ระบบใหม่' });
     }
 
-    // ---------- Init ----------
+    // ---------- Router & Initialization ----------
     window.addEventListener('DOMContentLoaded', () => {
       const params = new URLSearchParams(window.location.search);
-      const urlTeacherId = (params.get('id') || '').trim();
+      const isStudentPath = window.location.pathname.toLowerCase().includes('/std');
+      const stdParam = (params.get('std') || '').trim();
+      const idParam = (params.get('id') || '').trim();
 
-      if (urlTeacherId) {
-        executeAutoLogin(urlTeacherId);
+      // 1. ตรวจสอบโหมดนักเรียน (ผ่าน /std/?id=... หรือ ?std=...)
+      if (isStudentPath && idParam) {
+        loadStudentPortal(idParam);
+        return;
+      }
+      if (stdParam) {
+        loadStudentPortal(stdParam);
         return;
       }
 
+      // 2. ถ้าเป็นครู Auto-login ผ่าน ?id=... (ไม่ใช่โหมดนักเรียน)
+      if (idParam && !isStudentPath) {
+        executeAutoLogin(idParam);
+        return;
+      }
+
+      // 3. ตรวจสอบเซสชันครูที่บันทึกไว้ในเบราว์เซอร์
       const savedTeacher = localStorage.getItem('mutec_teacherName');
       const savedToken = localStorage.getItem('mutec_token');
       if (savedTeacher && savedToken) {
@@ -357,6 +516,238 @@
       }
     }
 
+    function handleLogoClick() {
+      if (currentTeacher) {
+        backToDashboard();
+      } else {
+        switchTeacherLogin();
+      }
+    }
+
+    function switchTeacherLogin() {
+      document.getElementById('studentPortalSection').classList.add('hidden');
+      document.getElementById('studentNavBtn').classList.add('hidden');
+      document.getElementById('loginSection').classList.remove('hidden');
+      cleanUrl();
+    }
+
+    // ---------- โหมดสถิตินักเรียน (Student Portal) ----------
+    async function loadStudentPortal(studentId) {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('dashboardSection').classList.add('hidden');
+      document.getElementById('scanSection').classList.add('hidden');
+      document.getElementById('userInfo').classList.add('hidden');
+      document.getElementById('studentNavBtn').classList.remove('hidden');
+      document.getElementById('studentPortalSection').classList.remove('hidden');
+
+      const container = document.getElementById('studentActivitiesContainer');
+      container.innerHTML = `
+        <div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">
+          <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-500 mb-2"></i>
+          <p>กำลังค้นหาข้อมูลและสถิติของนักเรียนรหัส: <strong>${escapeHtml(studentId)}</strong>...</p>
+        </div>
+      `;
+
+      const res = await apiCall('getStudentStats', { studentId: studentId });
+      if (!res.success) {
+        container.innerHTML = `
+          <div class="bg-white p-8 rounded-2xl text-center shadow-sm border border-slate-100">
+            <i class="fa-solid fa-circle-exclamation text-4xl text-rose-500 mb-3"></i>
+            <h4 class="text-lg font-bold text-slate-800">ไม่พบข้อมูลนักเรียน</h4>
+            <p class="text-slate-500 text-sm mt-1">${escapeHtml(res.message || 'รหัสนักเรียนไม่ถูกต้อง')}</p>
+            <button onclick="promptStudentSearch()" class="mt-4 bg-indigo-600 text-white text-sm font-bold px-4 py-2 rounded-xl">
+              ค้นหารหัสอื่น
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      // แสดงข้อมูลโปรไฟล์
+      const std = res.student;
+      document.getElementById('stdProfileImg').src = std.imageUrl;
+      document.getElementById('stdProfileName').innerText = std.name;
+      document.getElementById('stdProfileId').innerText = std.id;
+      document.getElementById('stdProfileClass').innerText = (std.level ? std.level : '-') + (std.room ? ' / ' + std.room : '');
+
+      // สรุปตัวเลข
+      const stats = res.stats;
+      document.getElementById('stdStatsActCount').innerText = stats.totalActivitiesJoined || 0;
+      document.getElementById('stdStatsTotalCheckins').innerText = stats.totalCheckinEvents || 0;
+
+      // แสดงการ์ดกิจกรรมแต่ละรายการ
+      const actList = stats.activities || [];
+      if (actList.length === 0) {
+        container.innerHTML = `<div class="bg-white p-8 rounded-2xl text-center text-slate-400 shadow-sm border border-slate-100">ยังไม่มีประวัติการบันทึกกิจกรรมในระบบ</div>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      actList.forEach((act, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4";
+
+        let badgeType = (act.type == '1' ? 'เช็คครั้งเดียว' : act.type == '2' ? 'เวลาเข้า-ออก' : 'ละหมาด');
+
+        let logsHtml = '';
+        if (act.logs && act.logs.length > 0) {
+          logsHtml = `
+            <div class="overflow-x-auto mt-3">
+              <table class="w-full text-xs text-left border-collapse">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+                    <th class="py-2 px-3">วันที่ / เวลาบันทึก</th>
+                    <th class="py-2 px-3">รอบที่เช็ค</th>
+                    <th class="py-2 px-3">ครูผู้ตรวจ</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+          `;
+          act.logs.forEach(log => {
+            let roundsText = [];
+            for (let r in log.roundTimes) {
+              if (log.roundTimes[r]) {
+                roundsText.push(`<span class="inline-block bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-[11px] font-semibold mr-1 mb-1">${escapeHtml(r)}: ${escapeHtml(log.roundTimes[r])}</span>`);
+              }
+            }
+            logsHtml += `
+              <tr class="hover:bg-slate-50/50">
+                <td class="py-2.5 px-3 font-mono text-slate-600">${escapeHtml(log.recordedAt)}</td>
+                <td class="py-2.5 px-3">${roundsText.length ? roundsText.join('') : '<span class="text-slate-400">-</span>'}</td>
+                <td class="py-2.5 px-3 text-slate-500">${escapeHtml(log.teacher)}</td>
+              </tr>
+            `;
+          });
+          logsHtml += `</tbody></table></div>`;
+        } else {
+          logsHtml = `<p class="text-xs text-slate-400 italic">ยังไม่มีการบันทึกเวลาในกิจกรรมนี้</p>`;
+        }
+
+        card.innerHTML = `
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b border-slate-100 pb-3">
+            <div>
+              <span class="text-[11px] font-bold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full">${badgeType}</span>
+              <h4 class="text-lg font-bold text-slate-800 mt-1">${escapeHtml(act.activityName)}</h4>
+            </div>
+            <div class="text-right">
+              <span class="text-xs text-slate-400">เข้าร่วมแล้ว</span>
+              <span class="text-lg font-extrabold text-indigo-600 ml-1">${act.joinedCount}</span>
+              <span class="text-xs text-slate-400">วัน</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-xs font-bold text-slate-500 mb-1"><i class="fa-solid fa-clock-rotate-left mr-1"></i> ประวัติการเช็คชื่อ:</p>
+            ${logsHtml}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function promptStudentSearch() {
+      Swal.fire({
+        title: 'ตรวจสอบสถิตินักเรียน',
+        text: 'กรุณากรอกรหัสนักเรียน หรือเลข RFID',
+        input: 'text',
+        inputPlaceholder: 'เช่น 66209010001',
+        showCancelButton: true,
+        confirmButtonText: 'ค้นหา',
+        cancelButtonText: 'ยกเลิก',
+        inputValidator: (value) => {
+          if (!value || !value.trim()) return 'กรุณากรอกรหัสประจำตัวนักเรียน';
+        }
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const id = result.value.trim();
+          loadStudentPortal(id);
+        }
+      });
+    }
+
+    // ---------- ครู: แท็บและการจัดการแดชบอร์ด ----------
+    function switchTab(tab) {
+      const isAct = (tab === 'activities');
+      document.getElementById('tabContentActivities').classList.toggle('hidden', !isAct);
+      document.getElementById('tabContentStats').classList.toggle('hidden', isAct);
+
+      document.getElementById('tabBtnActivities').className = isAct
+        ? "px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition"
+        : "px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+
+      document.getElementById('tabBtnStats').className = !isAct
+        ? "px-4 py-2 rounded-xl text-sm font-bold bg-indigo-600 text-white shadow-sm transition"
+        : "px-4 py-2 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+
+      if (!isAct) {
+        loadDashboardStats();
+      }
+    }
+
+    async function loadDashboardStats() {
+      const tbody = document.getElementById('statsTableBody');
+      tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดสถิติล่าสุด...</td></tr>`;
+
+      const res = await apiCall('getDashboardStats');
+      if (!res.success) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-rose-500">${escapeHtml(res.message || 'ไม่สามารถโหลดสถิติได้')}</td></tr>`;
+        return;
+      }
+
+      const st = res.stats;
+      document.getElementById('statTotalActivities').innerText = st.totalActivities || 0;
+      document.getElementById('statTodayTotal').innerText = st.totalTodayCheckins || 0;
+      document.getElementById('statAllTimeTotal').innerText = st.totalAllTimeCheckins || 0;
+
+      const actList = st.activities || [];
+      if (actList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400">ยังไม่มีข้อมูลกิจกรรม</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = '';
+      actList.forEach(act => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+        let roundsBadge = [];
+        for (let r in act.roundStats) {
+          roundsBadge.push(`<span class="inline-block bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-xs mr-1 mb-1"><strong>${escapeHtml(r)}:</strong> ${act.roundStats[r]}</span>`);
+        }
+
+        tr.innerHTML = `
+          <td class="py-3 px-3 font-bold text-slate-800">${escapeHtml(act.name)}</td>
+          <td class="py-3 px-3"><span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-semibold">${escapeHtml(act.type == '1' ? 'ครั้งเดียว' : act.type == '2' ? 'เข้า-ออก' : 'ละหมาด')}</span></td>
+          <td class="py-3 px-3 text-center font-extrabold text-emerald-600">${act.todayCount}</td>
+          <td class="py-3 px-3 text-center font-semibold text-slate-600">${act.totalCount}</td>
+          <td class="py-3 px-3">${roundsBadge.length ? roundsBadge.join('') : '-'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function copyStudentLink() {
+      const input = document.getElementById('shareStudentIdInput');
+      const val = (input.value || '').trim();
+      if (!val) {
+        return Swal.fire({ icon: 'warning', text: 'กรุณากรอกรหัสนักเรียนก่อนคัดลอกลิงก์' });
+      }
+
+      const currentOrigin = window.location.origin + window.location.pathname.replace(/\/std\/?$/, '');
+      const studentUrl = currentOrigin.replace(/\/index\.html$/, '') + "/std/?id=" + encodeURIComponent(val);
+
+      navigator.clipboard.writeText(studentUrl).then(() => {
+        Swal.fire({
+          icon: 'success',
+          title: 'คัดลอกลิงก์สำเร็จ!',
+          text: studentUrl,
+          confirmButtonText: 'ตกลง'
+        });
+      }).catch(() => {
+        Swal.fire({ icon: 'info', title: 'ลิงก์สำหรับนักเรียน:', text: studentUrl });
+      });
+    }
+
+    // ---------- ครู: ฟังก์ชันจัดการทั่วไป ----------
     async function executeAutoLogin(teacherId) {
       Swal.fire({ title: 'กำลังเข้าสู่ระบบอัตโนมัติ...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
       const res = await apiCall('login', { teacherId: teacherId, idCard: null });
@@ -374,6 +765,9 @@
       document.getElementById('teacherNameDisplay').innerText = "สวัสดี, " + teacherName;
       document.getElementById('userInfo').classList.remove('hidden');
       document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('scanSection').classList.add('hidden');
+      document.getElementById('studentPortalSection').classList.add('hidden');
+      document.getElementById('studentNavBtn').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
       loadActivities();
     }
@@ -405,6 +799,8 @@
       document.getElementById('userInfo').classList.add('hidden');
       document.getElementById('dashboardSection').classList.add('hidden');
       document.getElementById('scanSection').classList.add('hidden');
+      document.getElementById('studentPortalSection').classList.add('hidden');
+      document.getElementById('studentNavBtn').classList.add('hidden');
       document.getElementById('loginSection').classList.remove('hidden');
       if (focusKeepInterval) { clearInterval(focusKeepInterval); focusKeepInterval = null; }
       closeStudentModal();
@@ -414,7 +810,6 @@
 
     function logout() { resetToLogin(); }
 
-    // ---------- Activities ----------
     async function loadActivities() {
       const container = document.getElementById('activityContainer');
       container.innerHTML = `<div class="col-span-full text-center py-8 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดกิจกรรม...</div>`;
@@ -512,7 +907,7 @@
       });
     }
 
-    // ---------- โหลดฐานข้อมูลความเร็วสูงเข้าสู่หน่วยความจำ (Preload Cache) ----------
+    // ---------- โหลดฐานข้อมูล Preload Cache สำหรับสแกน ----------
     async function goToScanDashboard(name, type, configStr) {
       const config = (configStr || '').split(',').map(s => s.trim()).filter(Boolean);
       activeActivity = { name, type, config };
@@ -577,9 +972,7 @@
       }
     }
 
-    // ==========================================
-    // สแกน QR Code ด้วยกล้อง (เต็มจอ + ซูม 2X + สแกนต่อเนื่อง)
-    // ==========================================
+    // ---------- กล้องสแกน QR ----------
     function openQrScanner() {
       if (!activeActivity || isCameraActive || cameraStartPromise) return;
 
@@ -614,12 +1007,11 @@
         Swal.fire({
           icon: 'error',
           title: 'ไม่สามารถเปิดกล้องได้',
-          text: 'กรุณาอนุญาตให้เว็บเข้าถึงกล้อง และเปิดผ่าน Chrome/Safari โดยตรง (ไม่ใช่เบราว์เซอร์ในแอปอื่น เช่น LINE)'
+          text: 'กรุณาอนุญาตให้เว็บเข้าถึงกล้อง และเปิดผ่าน Chrome/Safari โดยตรง'
         });
       });
     }
 
-    // ตั้งซูมเริ่มต้น 2X (ถ้าอุปกรณ์รองรับ)
     function setupZoom() {
       zoomFeature = null;
       try {
@@ -632,11 +1024,8 @@
           document.getElementById('zoomToggleBtn').classList.remove('hidden');
           return;
         }
-      } catch (e) {
-        console.log("Zoom feature not available:", e);
-      }
+      } catch (e) {}
 
-      // ทางเลือกสำรอง: ใช้ applyVideoConstraints
       try {
         html5QrCode.applyVideoConstraints({ advanced: [{ zoom: 2 }] })
           .then(() => {
@@ -646,9 +1035,7 @@
             document.getElementById('zoomToggleBtn').classList.remove('hidden');
           })
           .catch(() => {});
-      } catch (e) {
-        console.log("Zoom not supported on this device/browser", e);
-      }
+      } catch (e) {}
     }
 
     function toggleZoom() {
@@ -661,7 +1048,7 @@
           if (zoomFeature.max && currentZoom > zoomFeature.max()) currentZoom = zoomFeature.max();
           zoomFeature.apply(currentZoom);
         }
-      } catch (e) { console.log("Apply zoom error:", e); }
+      } catch (e) {}
       document.getElementById('zoomLabel').innerText = (currentZoom >= 2 ? '2X' : '1X');
     }
 
@@ -680,7 +1067,6 @@
       };
 
       if (cameraStartPromise) {
-        // กล้องกำลังเริ่มทำงาน รอให้เสร็จก่อนค่อยปิด
         cameraStartPromise.then(stopNow);
       } else {
         stopNow();
@@ -688,14 +1074,13 @@
       setTimeout(focusAttendanceInput, 300);
     }
 
-    // เมื่อกล้องอ่านค่า QR Code ได้
     function onScanSuccess(decodedText) {
       if (!decodedText) return;
       const text = decodedText.trim();
       const now = Date.now();
 
-      if (now < scanLockUntil) return;                                // กำลังแสดงผลคนก่อนหน้า
-      if (text === lastScanText && now - lastScanTime < 4000) return; // กันสแกนรหัสเดิมรัว ๆ
+      if (now < scanLockUntil) return;
+      if (text === lastScanText && now - lastScanTime < 4000) return;
 
       lastScanText = text;
       lastScanTime = now;
@@ -720,22 +1105,19 @@
       }
     }
 
-    // รับค่าจากช่องกรอก / เครื่องอ่าน RFID
     function handleAttendanceSubmit(e) {
       e.preventDefault();
       const inputField = document.getElementById('attendanceInput');
       const scanValue = inputField.value.trim();
       if (!scanValue) return;
 
-      inputField.value = ''; // เคลียร์ช่องทันที คนต่อไปแตะต่อได้เลย
+      inputField.value = '';
       processStudentAttendance(scanValue);
     }
 
-    // ประมวลผลการสแกน (ใช้ร่วมกันทั้ง RFID / พิมพ์รหัส / กล้อง QR)
     function processStudentAttendance(scanValue) {
       const modeOption = document.getElementById('modeOptionSelect').value;
 
-      // 1. ค้นหาในแคชทันที
       const student = cachedStudents[scanValue];
       if (!student) {
         showErrorModal({
@@ -745,7 +1127,6 @@
         return;
       }
 
-      // 2. เช็คการสแกนซ้ำในรอบนี้ทันที
       if (!cachedTodayScanned[modeOption]) {
         cachedTodayScanned[modeOption] = {};
       }
@@ -759,14 +1140,12 @@
         return;
       }
 
-      // 3. ถูกต้อง! อัปเดตแคช + นับยอด + แสดงผลทันที
       cachedTodayScanned[modeOption][student.id] = true;
       todayTotalCount++;
       updateCounter();
 
       showStudentModal(student, modeOption);
 
-      // 4. บันทึกลง Google Sheets เบื้องหลังแบบ Async
       apiCall('saveAttendance', {
         activityName: activeActivity.name,
         student: student,
@@ -778,7 +1157,6 @@
       });
     }
 
-    // บันทึกไม่สำเร็จ -> คืนค่าแคช ให้สแกนใหม่ได้
     function revertScan(student, modeOption, message) {
       console.error("บันทึกเบื้องหลังขัดข้อง:", message);
       if (cachedTodayScanned[modeOption]) delete cachedTodayScanned[modeOption][student.id];
@@ -799,6 +1177,7 @@
     function backToDashboard() {
       closeQrScanner();
       document.getElementById('scanSection').classList.add('hidden');
+      document.getElementById('studentPortalSection').classList.add('hidden');
       document.getElementById('dashboardSection').classList.remove('hidden');
       if (focusKeepInterval) {
         clearInterval(focusKeepInterval);
